@@ -22,6 +22,8 @@ summary: House style: docs on every item, no mod.rs, no separators, blank lines,
   `#[expect(lint, reason = "...")]`. Never `#[allow]`, and never crate-level suppression.
 - No `unsafe` unless the crate opts out of `#![forbid(unsafe_code)]` with a documented
   reason. Each unsafe block has one operation and a `// SAFETY:` comment.
+- `src/lib.rs` is `#![no_std]` with `alloc`, and depends on `sas-plus` without default
+  features. Library code must not reach for `std`; the `no_std build` CI job checks it.
 - Heuristics must stay admissible: never above `h*`, and `None` (dead end) only when no plan
   exists. Without shrinking and with exact bisimulation, h must equal `h*`. Changes to
   merging, shrinking, pruning or `MergeAndShrink::build` need the properties in

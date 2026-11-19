@@ -12,6 +12,8 @@ summary: Crate metadata, release-plz versions and changelog, deny policy, truste
   version or edit generated changelog entries.
 - `Cargo.toml` keeps `description`, `license`, `repository`, `readme`, `keywords` (at most 5)
   and `categories` (valid crates.io slugs), and declares `rust-version`.
+- The library depends on `sas-plus` with `default-features = false`; features the tests need
+  go on the dev-dependency only.
 - `fuzz/Cargo.toml` uses the same `sas-plus` version requirement as the crate, so the task
   types unify. Bump both together.
 - New dependencies must pass `cargo deny check`: allowed licenses, no advisories, no git or

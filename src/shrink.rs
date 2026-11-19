@@ -1,6 +1,8 @@
 //! Shrink strategies: state equivalences that make a factor smaller.
 
-use std::collections::HashMap;
+use alloc::collections::BTreeMap;
+use alloc::vec;
+use alloc::vec::Vec;
 
 use sas_plus::LabeledTransitionSystem;
 
@@ -84,8 +86,8 @@ fn count_ids(ids: &[usize]) -> usize {
 }
 
 /// Numbers keys densely in order of first appearance: equal keys get equal ids.
-fn assign_ids<K: std::hash::Hash + Eq>(keys: impl Iterator<Item = K>) -> Vec<usize> {
-    let mut ids = HashMap::new();
+fn assign_ids<K: Ord>(keys: impl Iterator<Item = K>) -> Vec<usize> {
+    let mut ids = BTreeMap::new();
     keys.map(|k| {
         let n = ids.len();
         *ids.entry(k).or_insert(n)

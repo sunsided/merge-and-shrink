@@ -16,7 +16,9 @@ needs before it can be merged.
    - [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov) for coverage;
    - [typos](https://github.com/crate-ci/typos);
    - [actionlint](https://github.com/rhysd/actionlint) and [zizmor](https://docs.zizmor.sh/);
-   - nightly Rust plus [cargo-fuzz](https://github.com/rust-fuzz/cargo-fuzz) for fuzzing.
+   - nightly Rust plus [cargo-fuzz](https://github.com/rust-fuzz/cargo-fuzz) for fuzzing;
+   - the `thumbv7em-none-eabihf` target (`rustup target add thumbv7em-none-eabihf`) for
+     `task build:no-std`.
 4. Install the git hooks with [prek](https://prek.j178.dev/) (`prek install`), or with
    `pre-commit install`. Fast checks run on commit; clippy and tests run on push.
 
@@ -44,10 +46,10 @@ needs before it can be merged.
   `#[expect(lint, reason = "...")]` on that item. Never `#[allow]`.
 - Unsafe code is forbidden unless a crate explicitly documents why it needs it.
 - README and doc links use absolute URLs (crates.io renders READMEs outside GitHub).
-- Heuristics must stay admissible: never above the optimal cost, and no false dead ends.
-  Without shrinking and with exact bisimulation, they must equal the optimal cost. Changes to
-  merging, shrinking or pruning must keep the properties in `tests/it/properties.rs` and the
-  fuzz target in `fuzz/` passing.
+- The library is `no_std` (needs `alloc`). Heuristics must stay admissible: never above the
+  optimal cost, and no false dead ends. Without shrinking and with exact bisimulation, they
+  must equal the optimal cost. Changes to merging, shrinking or pruning must keep the
+  properties in `tests/it/properties.rs` and the fuzz target in `fuzz/` passing.
 
 ## Branches
 

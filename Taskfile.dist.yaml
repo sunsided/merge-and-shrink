@@ -14,6 +14,8 @@ vars:
     sh: cargo nextest --version >/dev/null 2>&1 && echo yes || echo no
   # Branching model checked by lint:branch: github (main + feature/) or gitflow.
   BRANCH_FLOW: github
+  # A target without std, to check that the library builds as no_std.
+  NO_STD_TARGET: thumbv7em-none-eabihf
 
 env:
   # Newer nextest fails when a crate has no tests; warn instead (ignored by older versions).
@@ -31,6 +33,14 @@ tasks:
       - cargo build --workspace --all-targets --all-features {{.CLI_ARGS}}
       # Verify the fuzz targets still compile against the library (needs nightly).
       - task: fuzz:build
+
+  build:no-std:
+    desc: Build the library as published (sas-plus without default features) for a no_std target
+    preconditions:
+      - sh: rustup target list --installed | grep -qx {{.NO_STD_TARGET}}
+        msg: "{{.NO_STD_TARGET}} not installed - rustup target add {{.NO_STD_TARGET}}"
+    cmds:
+      - cargo build --lib --target {{.NO_STD_TARGET}}
 
   test:
     desc: Run tests (nextest if installed, cargo test otherwise), then doctests
@@ -201,6 +211,7 @@ tasks:
       - task: lint
       - task: doc
       - task: test
+      - task: build:no-std
       - task: deny
       - task: msrv
       - task: fuzz:build

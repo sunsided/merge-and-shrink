@@ -1,5 +1,7 @@
 //! Merge strategies: which two factors to combine next.
 
+use alloc::vec::Vec;
+
 use sas_plus::VarId;
 
 use crate::Factor;

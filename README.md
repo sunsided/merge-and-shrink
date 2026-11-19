@@ -72,7 +72,7 @@ Without shrinking, and with exact bisimulation, h equals h* on **every** state o
 
 ## Features
 
-The crate has no Cargo features. It depends on `sas-plus` 0.2.
+`no_std` (needs `alloc`). The crate has no Cargo features. It depends on `sas-plus` 0.2 without its default features.
 
 ## MSRV
 

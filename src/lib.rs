@@ -12,7 +12,10 @@
 //! goal-respecting bisimulation. Planned: label reduction, greedy/size-bounded
 //! bisimulation, DFP/SCC-DFP merging, shrinking *before* merging.
 
+#![no_std]
 #![forbid(unsafe_code)]
+
+extern crate alloc;
 
 mod factor;
 mod merge;
@@ -21,6 +24,8 @@ mod shrink;
 pub use factor::{Factor, MergeTree};
 pub use merge::{LinearMerge, MergeStrategy};
 pub use shrink::{Bisimulation, NoShrink, ShrinkStrategy};
+
+use alloc::vec::Vec;
 
 use sas_plus::{Abstraction, LabeledTransitionSystem, State, Task};
 
