@@ -60,8 +60,8 @@ tasks:
   test:fd:
     desc: Compare heuristic values with Fast Downward (needs Docker and the aibasel/downward image)
     preconditions:
-      - sh: docker image inspect aibasel/downward >/dev/null 2>&1
-        msg: "aibasel/downward not found - docker pull aibasel/downward"
+      - sh: docker image inspect aibasel/downward@sha256:328732c5cb87e8c34f477a88a4f99977b6ea91ca5c1e859b886b5334c42d80e8 >/dev/null 2>&1
+        msg: "pinned Fast Downward image not found - docker pull aibasel/downward@sha256:328732c5cb87e8c34f477a88a4f99977b6ea91ca5c1e859b886b5334c42d80e8"
     cmds:
       - cargo test --release --test it fast_downward -- --ignored --nocapture {{.CLI_ARGS}}
 

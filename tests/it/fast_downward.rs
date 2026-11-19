@@ -1,15 +1,15 @@
 //! Compares heuristic values with Fast Downward's merge-and-shrink.
 //!
-//! Ignored by default because it needs Docker and the Fast Downward image
-//! (`docker pull aibasel/downward`; checked against
-//! `aibasel/downward@sha256:328732c5cb87e8c34f477a88a4f99977b6ea91ca5c1e859b886b5334c42d80e8`).
+//! Ignored by default because it needs Docker and the Fast Downward image,
+//! pinned by digest so that results stay reproducible:
+//! `docker pull aibasel/downward@sha256:328732c5cb87e8c34f477a88a4f99977b6ea91ca5c1e859b886b5334c42d80e8`.
 //! Run it with `task test:fd`.
 //!
 //! Each translated fixture is evaluated on states reachable from its initial
 //! state: every state becomes the initial state of a copy of the task, and
 //! Fast Downward reports its initial heuristic value. With exact bisimulation
 //! both heuristics are perfect, so they must agree with `h*`. With a size
-//! limit, tie-breaking in merging and shrinking differs between the two, so
+//! limit, the two need not agree (not every difference is explained yet), so
 //! the values are only reported, and checked to be admissible.
 
 use std::collections::{HashSet, VecDeque};
@@ -22,7 +22,8 @@ use sas_plus::fdr::SasFile;
 use sas_plus::{State, Task};
 
 /// The Fast Downward image the comparison runs in.
-const IMAGE: &str = "aibasel/downward";
+const IMAGE: &str =
+    "aibasel/downward@sha256:328732c5cb87e8c34f477a88a4f99977b6ea91ca5c1e859b886b5334c42d80e8";
 
 /// The fixtures under `tests/fixtures/translated`.
 const FIXTURES: [&str; 3] = ["sussman-anomaly", "gripper-2", "gripper-4"];
@@ -244,7 +245,13 @@ fn initial_value(log: &str) -> Option<u64> {
         .lines()
         .find_map(|l| l.split_once(PREFIX).map(|(_, v)| v))
     {
-        return line.trim().parse().ok();
+        return match line.trim() {
+            "infinity" => None,
+            v => Some(
+                v.parse()
+                    .unwrap_or_else(|_| panic!("bad heuristic value {v:?}")),
+            ),
+        };
     }
 
     assert!(
