@@ -2,6 +2,7 @@
 
 use merge_and_shrink::{Bisimulation, LinearMerge, MergeAndShrink, NoShrink};
 use sas_plus::random::{RandomTaskParams, random_task};
+use sas_plus::{State, Task};
 
 use crate::strategies::states_of;
 
@@ -40,10 +41,25 @@ fn unshrunk_and_bisimulation_are_perfect() {
         // With pruning, values are only guaranteed on reachable states.
         let pruned = MergeAndShrink::new(LinearMerge::new((0..n).rev().collect()), Bisimulation)
             .build(&task);
-        assert_eq!(
-            pruned.value(&task.initial),
-            h_star(&task.initial),
-            "seed {seed}, pruned"
-        );
+        for s in reachable_states(&task) {
+            assert_eq!(pruned.value(&s), h_star(&s), "seed {seed}, pruned, {s:?}");
+        }
     }
+}
+
+/// Every state reachable from the initial state of `task`, by breadth-first search.
+fn reachable_states(task: &Task) -> Vec<State> {
+    let mut states = vec![task.initial_state()];
+    let mut next = 0;
+    while let Some(s) = states.get(next).cloned() {
+        next += 1;
+        for op in task.applicable_operators(&s) {
+            let t = task.apply(op, &s);
+            if !states.contains(&t) {
+                states.push(t);
+            }
+        }
+    }
+
+    states
 }
