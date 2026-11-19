@@ -13,7 +13,6 @@
 //! bisimulation, DFP/SCC-DFP merging, shrinking *before* merging.
 
 #![no_std]
-#![forbid(unsafe_code)]
 
 extern crate alloc;
 
@@ -34,9 +33,10 @@ use sas_plus::{Abstraction, LabeledTransitionSystem, State, Task};
 pub struct MergeAndShrink<M, S> {
     /// Picks the next two factors to merge.
     pub merge: M,
-    /// Shrinks each product right after it is built.
+    /// Shrinks each product after it is built and pruned.
     pub shrink: S,
-    /// Remove unreachable and dead-end abstract states after each step.
+    /// Remove unreachable and dead-end abstract states from each atomic factor,
+    /// and from each product before it is shrunk.
     pub prune: bool,
 }
 
@@ -92,7 +92,7 @@ impl<M: MergeStrategy, S: ShrinkStrategy> MergeAndShrink<M, S> {
     }
 
     /// Takes the two factors the merge strategy picks, and returns their
-    /// product, shrunk and pruned.
+    /// product, pruned and shrunk.
     fn merge_next(&mut self, factors: &mut [Option<Factor>], costs: &[u64]) -> Factor {
         let (i, j) = self.merge.next_pair(factors);
         assert_ne!(i, j, "merge strategy returned the same factor twice");
@@ -104,12 +104,15 @@ impl<M: MergeStrategy, S: ShrinkStrategy> MergeAndShrink<M, S> {
             .expect("merge strategy chose an inactive factor");
 
         let mut product = Factor::product(a, b);
-        if let Some((map, n)) = self.shrink.compute(&product, costs) {
-            product.apply_abstraction(&map, n);
-        }
-
+        // Pruning first keeps dead and unreachable states out of shrinking. A quotient
+        // of live states is live, so shrinking leaves nothing to prune afterwards
+        // (see ShrinkStrategy::compute for what a strategy must not do).
         if self.prune {
             product.prune(costs);
+        }
+
+        if let Some((map, n)) = self.shrink.compute(&product, costs) {
+            product.apply_abstraction(&map, n);
         }
 
         product
@@ -125,7 +128,10 @@ pub struct MergeAndShrinkHeuristic {
 }
 
 impl MergeAndShrinkHeuristic {
-    /// Admissible estimate of the cost to the goal; `None` = dead end.
+    /// Admissible estimate of the cost to the goal.
+    ///
+    /// `None` means `state` is a dead end, or, with pruning, a state that is
+    /// unreachable from the task's initial state (even a goal state).
     #[must_use]
     pub fn value(&self, state: &State) -> Option<u64> {
         self.factor

@@ -14,7 +14,7 @@ Merge-and-shrink abstraction heuristics for factored transition systems: atomic 
 
 Optimal planners such as A* need a heuristic that never overestimates the cost to the goal. Abstraction heuristics get one by mapping the huge concrete state space onto a much smaller abstract one, computing exact goal distances there, and using those distances as lower bounds. Merge-and-shrink builds such abstractions over *all* variables of a task at once, so it can capture interactions between variables that pattern databases, which project onto a few variables, cannot see.
 
-The crate turns a SAS+ task (for example Fast Downward translator output, read through `sas-plus`) into a heuristic you can query per state: `value` returns the estimated cost, or `None` when the state is a proven dead end. Because the heuristic also implements `sas_plus::Abstraction`, it plugs into [`cost-partition`](https://github.com/sunsided/cost-partition), which adds up several abstraction heuristics admissibly.
+The crate turns a SAS+ task (for example Fast Downward translator output, read through `sas-plus`) into a heuristic you can query per state: `value` returns the estimated cost, or `None` when the state is a proven dead end or was pruned as unreachable from the initial state. Because the heuristic also implements `sas_plus::Abstraction`, it plugs into [`cost-partition`](https://github.com/sunsided/cost-partition), which adds up several abstraction heuristics admissibly.
 
 ## How it works
 
@@ -22,16 +22,16 @@ The crate turns a SAS+ task (for example Fast Downward translator output, read t
 flowchart LR
   task[SAS+ task] --> atomic[one atomic factor per variable]
   atomic --> merge[merge two factors: synchronized product]
-  merge --> shrink[shrink: bisimulation]
-  shrink --> prune[prune unreachable and dead states]
-  prune -->|more than one factor left| merge
-  prune -->|one factor left| h[goal distances = heuristic]
+  merge --> prune[prune unreachable and dead states]
+  prune --> shrink[shrink: bisimulation]
+  shrink -->|more than one factor left| merge
+  shrink -->|one factor left| h[goal distances = heuristic]
 ```
 
 1. **Atomic factors.** Each variable becomes a small transition system over its values. Its labels are the task's operators.
 2. **Merge.** A merge strategy picks two factors and replaces them by their synchronized product: an operator moves both components at once, so the product tracks both variables together. `LinearMerge` merges the variables in a fixed order.
-3. **Shrink.** A shrink strategy groups product states that behave alike. `Bisimulation` starts from groups of states with the same goal distance and goal status, and splits them until all states in a group can reach the same groups by the same labels, which keeps every goal distance exact while often shrinking the product a lot. `NoShrink` keeps the full product.
-4. **Prune.** States that are unreachable from the initial state, or that cannot reach a goal, are dropped.
+3. **Prune.** States that are unreachable from the initial state, or that cannot reach a goal, are dropped.
+4. **Shrink.** A shrink strategy groups product states that behave alike. `Bisimulation` starts from groups of states with the same goal distance and goal status, and splits them until all states in a group can reach the same groups by the same labels, which keeps every goal distance exact while often shrinking the product a lot. `NoShrink` keeps the full product.
 5. **Evaluate.** After the last merge, the goal distances of the single remaining factor are the heuristic. A merge tree of lookup tables maps each concrete state to its abstract state, one table per merge, so evaluating a state is cheap.
 
 On plain SAS+ tasks, exact bisimulation makes the heuristic perfect: it equals the optimal cost on every state without pruning, and on every reachable state with pruning (`MergeAndShrink::new` prunes by default; pruned states evaluate to `None`). Conditional effects and derived variables (axioms) are over-approximated by the atomic factors, so there the heuristic stays admissible but can be lower.
@@ -64,7 +64,7 @@ assert_eq!(h.value(&task.initial), Some(7));
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
-`None` from `value` means a dead end: no plan exists from that state.
+`None` from `value` means a dead end: no plan exists from that state. With pruning (the default), states unreachable from the task's initial state also evaluate to `None`, even goal states, so build with `prune: false` to evaluate states from another start.
 
 ## Tested
 
