@@ -55,6 +55,7 @@ tasks:
 
   fmt:
     desc: Format all Rust sources
+    aliases: [format]
     cmds:
       - cargo fmt --all
       - task: fuzz:fmt
@@ -73,6 +74,12 @@ tasks:
       - task: lint:typos
       - task: lint:actions
 
+  check:
+    desc: Fast static checks (format check and clippy), no tests
+    cmds:
+      - task: fmt:check
+      - task: lint:clippy
+
   lint:clippy:
     desc: Clippy (pedantic, warnings as errors)
     cmds:
@@ -80,6 +87,7 @@ tasks:
 
   lint:fix:
     desc: Auto-fix clippy findings and typos, then format (review the diff)
+    aliases: [fix]
     cmds:
       - cargo clippy --workspace --all-targets --all-features --fix --allow-dirty --allow-staged
       - typos --write-changes
@@ -132,6 +140,14 @@ tasks:
       RUSTDOCFLAGS: -D warnings
     cmds:
       - cargo doc --workspace --all-features --no-deps --document-private-items
+
+  doc:open:
+    desc: Build the docs and open them in a browser
+    aliases: [docs:open]
+    env:
+      RUSTDOCFLAGS: -D warnings
+    cmds:
+      - cargo doc --workspace --all-features --no-deps --document-private-items --open
 
   deny:
     desc: Check advisories, licenses, bans and sources
