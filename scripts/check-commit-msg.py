@@ -36,7 +36,7 @@ def subject_problems(subject):
         problems.append("start with a capital letter")
 
     if first.endswith("ed") and first not in PAST_TENSE_OK:
-        problems.append(f"use the imperative ('{first[:-2] or first}...'), not past tense '{first}'")
+        problems.append(f"use the imperative, not past tense '{first}'")
 
     if first in THIRD_PERSON:
         problems.append(f"use the imperative, not '{first}'")
