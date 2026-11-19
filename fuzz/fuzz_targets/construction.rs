@@ -55,6 +55,7 @@ fuzz_target!(|input: Input| {
         merge,
         shrink: Bisimulation,
         prune: input.prune,
+        max_states: usize::MAX,
     }
     .build(&task);
 

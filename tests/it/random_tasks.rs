@@ -19,12 +19,14 @@ fn unshrunk_and_bisimulation_are_perfect() {
             merge: LinearMerge::in_variable_order(n),
             shrink: NoShrink,
             prune: false,
+            max_states: usize::MAX,
         }
         .build(&task);
         let bisim = MergeAndShrink {
             merge: LinearMerge::in_variable_order(n),
             shrink: Bisimulation,
             prune: false,
+            max_states: usize::MAX,
         }
         .build(&task);
         assert!(bisim.num_abstract_states() <= full.num_abstract_states());

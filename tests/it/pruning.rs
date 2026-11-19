@@ -27,6 +27,7 @@ fn pruning_maps_unreachable_goal_states_to_none() {
             merge: LinearMerge::in_variable_order(2),
             shrink: NoShrink,
             prune,
+            max_states: usize::MAX,
         }
         .build(&task)
     };
