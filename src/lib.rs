@@ -8,6 +8,8 @@
 
 mod factor;
 mod merge;
+mod shrink;
 
 pub use factor::{Factor, MergeTree};
 pub use merge::{LinearMerge, MergeStrategy};
+pub use shrink::{Bisimulation, NoShrink, ShrinkStrategy};
