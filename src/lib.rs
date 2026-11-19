@@ -35,7 +35,8 @@ pub struct MergeAndShrink<M, S> {
     pub merge: M,
     /// Shrinks each product after it is built and pruned.
     pub shrink: S,
-    /// Remove unreachable and dead-end abstract states after each step.
+    /// Remove unreachable and dead-end abstract states from each atomic factor,
+    /// and from each product before it is shrunk.
     pub prune: bool,
 }
 
@@ -103,8 +104,9 @@ impl<M: MergeStrategy, S: ShrinkStrategy> MergeAndShrink<M, S> {
             .expect("merge strategy chose an inactive factor");
 
         let mut product = Factor::product(a, b);
-        // Pruning first keeps dead and unreachable states out of shrinking. Shrinking
-        // only merges live states, so it leaves nothing to prune afterwards.
+        // Pruning first keeps dead and unreachable states out of shrinking. A quotient
+        // of live states is live, so shrinking leaves nothing to prune afterwards
+        // (see ShrinkStrategy::compute for what a strategy must not do).
         if self.prune {
             product.prune(costs);
         }
