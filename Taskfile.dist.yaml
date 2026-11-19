@@ -26,9 +26,11 @@ tasks:
     silent: true
 
   build:
-    desc: Build all targets in the workspace
+    desc: Build all targets in the workspace, then the fuzz targets
     cmds:
       - cargo build --workspace --all-targets --all-features {{.CLI_ARGS}}
+      # Verify the fuzz targets still compile against the library (needs nightly).
+      - task: fuzz:build
 
   test:
     desc: Run tests (nextest if installed, cargo test otherwise), then doctests
