@@ -59,6 +59,14 @@ impl MergeTree {
         }
     }
 
+    /// The leftmost task variable this tree reads.
+    pub(crate) fn first_variable(&self) -> VarId {
+        match self {
+            Self::Leaf { var, .. } => *var,
+            Self::Node { left, .. } => left.first_variable(),
+        }
+    }
+
     /// Maps every root table entry through `map` (old abstract state to new).
     fn compose(&mut self, map: &[Option<usize>]) {
         let (Self::Leaf { table, .. } | Self::Node { table, .. }) = self;
@@ -72,6 +80,8 @@ impl MergeTree {
 #[derive(Clone, Debug)]
 pub struct Factor {
     /// The abstract transition system; labels are the task's operator ids.
+    /// While label reduction runs, a label is the representative operator of
+    /// its reduced label.
     pub lts: LabeledTransitionSystem,
     /// Maps concrete states to states of `lts`.
     pub tree: MergeTree,

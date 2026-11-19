@@ -1,5 +1,9 @@
 //! Merge strategies: which two factors to combine next.
 
+mod dfp;
+
+pub use dfp::{Dfp, SccDfp};
+
 use alloc::vec::Vec;
 
 use sas_plus::VarId;
@@ -12,8 +16,11 @@ pub trait MergeStrategy {
     /// The indices of the next two factors to merge, in that order.
     ///
     /// `factors` holds every factor created so far; merged ones are `None`.
-    /// Both indices must point at active (`Some`) factors and differ.
-    fn next_pair(&mut self, factors: &[Option<Factor>]) -> (usize, usize);
+    /// At least two are active. Both indices must point at active (`Some`)
+    /// factors and differ. `costs` holds one cost per label; with label
+    /// reduction, factors only use representative labels, which keep their
+    /// operator's cost.
+    fn next_pair(&mut self, factors: &[Option<Factor>], costs: &[u64]) -> (usize, usize);
 }
 
 /// Merges variables in a fixed order: `((v0 ⊗ v1) ⊗ v2) ⊗ ...`.
@@ -50,7 +57,7 @@ impl LinearMerge {
 }
 
 impl MergeStrategy for LinearMerge {
-    fn next_pair(&mut self, factors: &[Option<Factor>]) -> (usize, usize) {
+    fn next_pair(&mut self, factors: &[Option<Factor>], _: &[u64]) -> (usize, usize) {
         let pair = match self.composite {
             None => {
                 self.next = 2;
