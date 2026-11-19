@@ -14,7 +14,7 @@ cargo-fuzz = true
 arbitrary = { version = "1.5.0", features = ["derive"] }
 libfuzzer-sys = "0.4"
 # Same requirement as the crate itself, so the task types unify.
-sas-plus = "0.1.0"
+sas-plus = "0.2.1"
 
 [dependencies.merge-and-shrink]
 path = ".."

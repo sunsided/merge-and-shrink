@@ -20,7 +20,7 @@ use sas_plus::fdr::SasFile;
 
 # let output_sas = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/gripper-costs/output.sas");
 // `output_sas` is the path of a translator output file.
-let task = SasFile::parse(&std::fs::read_to_string(output_sas)?)?.to_task()?;
+let task = SasFile::parse(&std::fs::read_to_string(output_sas)?)?.to_task();
 
 let merge = LinearMerge::in_variable_order(task.num_variables());
 let h = MergeAndShrink::new(merge, Bisimulation).build(&task);
@@ -38,7 +38,7 @@ Without shrinking, and with exact bisimulation, h equals h* on **every** state o
 
 ## Features
 
-The crate has no Cargo features. It depends on `sas-plus` 0.1.
+The crate has no Cargo features. It depends on `sas-plus` 0.2.
 
 ## MSRV
 

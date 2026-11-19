@@ -12,8 +12,7 @@ fn bisimulation_is_perfect_on_gripper_with_action_costs() {
     );
     let task = SasFile::parse(&std::fs::read_to_string(path).unwrap())
         .unwrap()
-        .to_task()
-        .unwrap();
+        .to_task();
     let h = MergeAndShrink::new(
         LinearMerge::in_variable_order(task.num_variables()),
         Bisimulation,
