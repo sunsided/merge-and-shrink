@@ -1,0 +1,13 @@
+//! Integration tests for merge-and-shrink, compiled as a single test binary.
+//!
+//! - [`fdr_gripper`]: a hand-encoded Fast Downward task with action costs.
+//! - [`fdr_translated`]: Fast Downward translator output with known optimal costs.
+//! - [`random_tasks`]: fixed seeds of random tasks, checked on every state.
+//! - [`properties`]: property tests over random tasks and merge orders, checked
+//!   against the exact heuristic `h*`.
+
+mod fdr_gripper;
+mod fdr_translated;
+mod properties;
+mod random_tasks;
+mod strategies;

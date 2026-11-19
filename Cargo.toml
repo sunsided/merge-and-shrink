@@ -12,3 +12,7 @@ exclude = ["tests/fixtures", "LICENSES/GPL-2.0-or-later.txt"]
 
 [dependencies]
 sas-plus = { version = "0.1.0" }
+
+[dev-dependencies]
+criterion = "0.7.0"
+proptest = "1.11.0"

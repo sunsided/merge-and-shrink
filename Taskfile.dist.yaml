@@ -39,6 +39,14 @@ tasks:
     cmds:
       - cargo test --workspace --all-features --doc
 
+  test:prop:
+    desc: Run property tests with a high case count (PROPTEST_CASES, default 10000)
+    env:
+      PROPTEST_CASES: '{{.PROPTEST_CASES | default "10000"}}'
+    cmds:
+      # A nested `task` process inherits env; `task: test` would not.
+      - task test
+
   fmt:
     desc: Format all Rust sources
     cmds:

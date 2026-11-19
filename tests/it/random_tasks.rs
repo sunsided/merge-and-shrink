@@ -1,23 +1,7 @@
 use merge_and_shrink::{Bisimulation, LinearMerge, MergeAndShrink, NoShrink};
-use sas_plus::State;
 use sas_plus::random::{RandomTaskParams, random_task};
 
-fn all_states(domains: &[u32]) -> Vec<State> {
-    let mut states = vec![State(vec![])];
-    for &d in domains {
-        states = states
-            .into_iter()
-            .flat_map(|s| {
-                (0..d).map(move |v| {
-                    let mut s = s.clone();
-                    s.0.push(v);
-                    s
-                })
-            })
-            .collect();
-    }
-    states
-}
+use crate::strategies::all_states;
 
 /// Without shrinking, the final factor is the full state space: h = h*.
 /// Exact bisimulation preserves goal distances: still h = h*, but smaller.
