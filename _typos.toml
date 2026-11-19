@@ -12,5 +12,7 @@ extend-exclude = [
 
 [default.extend-words]
 # Project-specific words typos flags wrongly, e.g. `ser = "ser"`. Keep each entry justified.
+# Accepted variant spelling; used in commit 84f1c6f on main, which release-plz copies into CHANGELOG.md.
+unparseable = "unparseable"
 
 [default.extend-identifiers]
