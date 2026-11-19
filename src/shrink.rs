@@ -16,7 +16,7 @@ pub trait ShrinkStrategy {
     ///
     /// `map` has one entry per state of `factor.lts`, with class ids in
     /// `0..num_classes`; `None` entries prune the state. `max_states` is at
-    /// least 1. A strategy that returns more classes lets the product it feeds
+    /// least 1, except for a factor without states. A strategy that returns more classes lets the product it feeds
     /// exceed [`MergeAndShrink::max_states`](crate::MergeAndShrink::max_states).
     ///
     /// The factor is shrunk right before it is merged. With pruning, it has
@@ -51,7 +51,7 @@ impl ShrinkStrategy for NoShrink {
 /// Within the size limit it preserves goal distances exactly, and the result
 /// composes with later merges, so the final heuristic is perfect. At the limit
 /// it stops refining: blocks are split in order of increasing goal distance
-/// while the number of blocks stays within the limit. If the initial blocks
+/// until a split would exceed the limit (Fast Downward's `at_limit=return`). If the initial blocks
 /// (states with equal goal distance and goal status) already exceed it, those
 /// with the largest goal distances are combined. Either way the heuristic stays
 /// admissible.
@@ -111,13 +111,13 @@ fn bisimulation(
     }
 
     loop {
-        let (refined, n) = refine(&block, num_blocks, &out, max_states);
-        if n == num_blocks {
-            break;
-        }
-
+        let (refined, n, at_limit) = refine(&block, num_blocks, &out, max_states);
+        let done = n == num_blocks || at_limit;
         block = refined;
         num_blocks = n;
+        if done {
+            break;
+        }
     }
 
     (num_blocks < lts.num_states).then(|| (block.into_iter().map(Some).collect(), num_blocks))
@@ -144,14 +144,15 @@ fn outgoing(
 
 /// One signature-refinement round: splits blocks by the set of
 /// `(label, target block)` pairs their states can reach in one step, lowest
-/// block ids first, as long as the total stays within `max_states`. Returns
-/// the new blocks and their count; the count is unchanged when nothing split.
+/// block ids first, until a split would exceed `max_states`. Returns the new
+/// blocks, their count (unchanged when nothing split) and whether the limit
+/// stopped the round.
 fn refine(
     block: &[usize],
     num_blocks: usize,
     out: &[Vec<(usize, usize)>],
     max_states: usize,
-) -> (Vec<usize>, usize) {
+) -> (Vec<usize>, usize, bool) {
     let signatures = out.iter().enumerate().map(|(s, edges)| {
         let mut sig: Vec<(usize, usize)> = edges.iter().map(|&(l, d)| (l, block[d])).collect();
         sig.sort_unstable();
@@ -161,10 +162,10 @@ fn refine(
     });
     let (sub, num_sub) = assign_ids(signatures);
     if num_sub <= max_states {
-        return (sub, num_sub);
+        return (sub, num_sub, false);
     }
 
-    // Too many: accept splits block by block while they fit.
+    // Too many: accept splits block by block until one does not fit.
     let mut parts = vec![0_usize; num_blocks];
     let mut seen = vec![false; num_sub];
     for (s, &b) in block.iter().enumerate() {
@@ -174,23 +175,22 @@ fn refine(
     }
 
     let mut total = num_blocks;
-    let split: Vec<bool> = parts
-        .iter()
-        .map(|&p| {
-            let fits = total + p - 1 <= max_states;
-            if fits {
-                total += p - 1;
-            }
-            fits
-        })
-        .collect();
+    let mut split = vec![false; num_blocks];
+    for (b, &p) in parts.iter().enumerate() {
+        if total + p - 1 > max_states {
+            break;
+        }
+        total += p - 1;
+        split[b] = true;
+    }
 
-    assign_ids(
+    let (refined, n) = assign_ids(
         block
             .iter()
             .zip(&sub)
             .map(|(&b, &s)| (b, if split[b] { s } else { 0 })),
-    )
+    );
+    (refined, n, true)
 }
 
 /// Numbers keys densely in key order: equal keys get equal ids. Returns the ids

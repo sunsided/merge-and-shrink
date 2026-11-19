@@ -65,8 +65,8 @@ let h = MergeAndShrink::new(merge, Bisimulation).build(&task);
 // Exact bisimulation keeps goal distances: 7 is the optimal plan cost.
 assert_eq!(h.value(&task.initial), Some(7));
 
-// Fast Downward's default configuration: SCC-DFP merging, label reduction,
-// bisimulation, at most 50000 states per product.
+// The configuration `task test:fd` compares with Fast Downward: SCC-DFP
+// merging, label reduction, bisimulation, here at most 50000 states per product.
 let h = MergeAndShrink {
     max_states: 50_000,
     ..MergeAndShrink::new(SccDfp::new(&task), Bisimulation)
@@ -82,7 +82,7 @@ assert_eq!(h.value(&task.initial), Some(7));
 
 Without shrinking, and with exact bisimulation, h equals h* on **every** state of random tasks, for every merge strategy (any linear order, DFP, SCC-DFP), with and without label reduction. With pruning, h equals h* on the initial state. Greedy and size-bounded bisimulation, and tasks with conditional effects and derived variables (axioms), which atomic factors over-approximate, give admissible heuristics without false dead ends, and size-bounded products stay within the limit. The abstraction covers every concrete transition under its operator id. These hold as proptest properties and a fuzz target on random tasks, and on translator output.
 
-`task test:fd` compares heuristic values with [Fast Downward](https://www.fast-downward.org/)'s merge-and-shrink (Docker image `aibasel/downward`) on states of the translated fixtures, in the same configuration. With exact bisimulation, both equal h* on every state; with a limit of 20 states, they agree on 49 of 53 states with exact and on all 53 with greedy bisimulation, and differ elsewhere by tie-breaking.
+`task test:fd` compares heuristic values with [Fast Downward](https://www.fast-downward.org/)'s merge-and-shrink (Docker image `aibasel/downward`) on states of the translated fixtures, in the same configuration. With exact bisimulation, both equal h* on every state; with a limit of 20 states, they agree on 49 of 53 states with exact and on all 53 with greedy bisimulation; the cause of the other 4 differences is not yet traced.
 
 ## Features
 

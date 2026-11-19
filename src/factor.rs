@@ -84,6 +84,8 @@ impl MergeTree {
 #[derive(Clone, Debug)]
 pub struct Factor {
     /// The abstract transition system; labels are the task's operator ids.
+    /// While label reduction runs, a label is the representative operator of
+    /// its reduced label.
     pub lts: LabeledTransitionSystem,
     /// Maps concrete states to states of `lts`.
     pub tree: MergeTree,
