@@ -142,6 +142,17 @@ tasks:
     cmds:
       - cargo semver-checks --workspace
 
+  coverage:
+    desc: Coverage report (lcov.info, gitignored; HTML with -- --html)
+    preconditions:
+      - sh: cargo llvm-cov --version
+        msg: "cargo-llvm-cov not found - cargo install --locked cargo-llvm-cov"
+    cmds:
+      - cmd: cargo llvm-cov nextest --workspace --all-features --lcov --output-path lcov.info {{.CLI_ARGS}}
+        if: '[ "{{.NEXTEST}}" = "yes" ]'
+      - cmd: cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info {{.CLI_ARGS}}
+        if: '[ "{{.NEXTEST}}" = "no" ]'
+
   bench:
     desc: "Run benchmarks (criterion flags after --: task bench -- --quick)"
     cmds:
@@ -163,3 +174,4 @@ tasks:
     desc: Remove build output
     cmds:
       - cargo clean
+      - rm -f lcov.info
