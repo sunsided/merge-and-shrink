@@ -16,8 +16,8 @@ pub trait ShrinkStrategy {
     fn compute(&self, factor: &Factor, costs: &[u64]) -> Option<(Vec<Option<usize>>, usize)>;
 }
 
-/// Never shrinks: the factors keep every state, so the heuristic is perfect but
-/// the final factor is the full product.
+/// Never shrinks. Without pruning, the final factor is the full product and the
+/// heuristic is perfect on every state; with pruning, on every reachable state.
 pub struct NoShrink;
 
 impl ShrinkStrategy for NoShrink {

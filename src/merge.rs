@@ -17,7 +17,7 @@ pub trait MergeStrategy {
 /// Merges variables in a fixed order: `((v0 ⊗ v1) ⊗ v2) ⊗ ...`.
 #[derive(Clone, Debug)]
 pub struct LinearMerge {
-    /// The variables in merge order. Must contain every variable exactly once.
+    /// The variables in merge order; see [`LinearMerge::new`].
     order: Vec<VarId>,
     /// Number of entries of `order` merged so far.
     next: usize,
@@ -28,8 +28,9 @@ pub struct LinearMerge {
 impl LinearMerge {
     /// Merges the atomic factors of `order` from first to last.
     ///
-    /// `order` must be a permutation of the task's variables; building panics
-    /// otherwise.
+    /// `order` should list every variable of the task once. Building panics if
+    /// it has fewer entries than the task has variables, or repeats a variable
+    /// within those; entries beyond the task's variables are never read.
     #[must_use]
     pub fn new(order: Vec<VarId>) -> Self {
         Self {
