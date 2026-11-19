@@ -33,47 +33,51 @@ impl MergeStrategy for Dfp {
 /// graph into one with [`Dfp`], components in topological order (sources
 /// first), then merges the results with [`Dfp`].
 pub struct SccDfp {
-    /// Components with more than one variable, the next one last.
-    sccs: Vec<Vec<VarId>>,
-    /// Number of task variables.
-    num_vars: usize,
+    /// Ids of the components with more than one variable, the next one last.
+    remaining: Vec<usize>,
+    /// The component id of each variable.
+    scc_of: Vec<usize>,
 }
 
 impl SccDfp {
     /// Computes the strongly connected components of the causal graph of `task`.
     #[must_use]
     pub fn new(task: &Task) -> Self {
-        let mut sccs = components(&CausalGraph::new(task), task.num_variables());
-        sccs.retain(|c| c.len() > 1);
-        sccs.reverse();
+        let sccs = components(&CausalGraph::new(task), task.num_variables());
+        let mut scc_of = vec![0; task.num_variables()];
+        for (k, scc) in sccs.iter().enumerate() {
+            for &v in scc {
+                scc_of[v] = k;
+            }
+        }
 
         Self {
-            sccs,
-            num_vars: task.num_variables(),
+            remaining: (0..sccs.len())
+                .rev()
+                .filter(|&k| sccs[k].len() > 1)
+                .collect(),
+            scc_of,
         }
     }
 }
 
 impl MergeStrategy for SccDfp {
     fn next_pair(&mut self, factors: &[Option<Factor>], costs: &[u64]) -> (usize, usize) {
-        while let Some(scc) = self.sccs.last() {
-            let mut inside = vec![false; self.num_vars];
-            for &v in scc {
-                inside[v] = true;
-            }
-
+        // Until every component is merged, each factor lies within one
+        // component, so its first variable tells which.
+        while let Some(&k) = self.remaining.last() {
             let candidates: Vec<usize> = (0..factors.len())
                 .filter(|&i| {
                     factors[i]
                         .as_ref()
-                        .is_some_and(|f| f.tree.variables().iter().all(|&v| inside[v]))
+                        .is_some_and(|f| self.scc_of[f.tree.first_variable()] == k)
                 })
                 .collect();
             if candidates.len() > 1 {
                 return best_pair(factors, &candidates, costs);
             }
 
-            self.sccs.pop();
+            self.remaining.pop();
         }
 
         Dfp.next_pair(factors, costs)

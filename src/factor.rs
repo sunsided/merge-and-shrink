@@ -59,15 +59,11 @@ impl MergeTree {
         }
     }
 
-    /// The task variables this tree reads, left to right.
-    pub(crate) fn variables(&self) -> Vec<VarId> {
+    /// The leftmost task variable this tree reads.
+    pub(crate) fn first_variable(&self) -> VarId {
         match self {
-            Self::Leaf { var, .. } => vec![*var],
-            Self::Node { left, right, .. } => {
-                let mut vars = left.variables();
-                vars.extend(right.variables());
-                vars
-            }
+            Self::Leaf { var, .. } => *var,
+            Self::Node { left, .. } => left.first_variable(),
         }
     }
 
