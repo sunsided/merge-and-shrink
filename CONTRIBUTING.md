@@ -27,6 +27,7 @@ needs before it can be merged.
 | Command | What it does |
 |---|---|
 | `task test` | Tests (nextest if installed) and doctests |
+| `task test:fd` | Compare heuristic values with Fast Downward (needs Docker and `aibasel/downward`) |
 | `task test:prop` | Tests with 10000 proptest cases (`PROPTEST_CASES=...` to change) |
 | `task lint` | clippy (pedantic), separator ban, README link check, typos, workflow lints |
 | `task fmt` | Format the code |

@@ -57,6 +57,14 @@ tasks:
     cmds:
       - cargo test --workspace --all-features --doc
 
+  test:fd:
+    desc: Compare heuristic values with Fast Downward (needs Docker and the aibasel/downward image)
+    preconditions:
+      - sh: docker image inspect aibasel/downward >/dev/null 2>&1
+        msg: "aibasel/downward not found - docker pull aibasel/downward"
+    cmds:
+      - cargo test --release --test it fast_downward -- --ignored --nocapture {{.CLI_ARGS}}
+
   test:prop:
     desc: Run property tests with a high case count (PROPTEST_CASES, default 10000)
     env:
