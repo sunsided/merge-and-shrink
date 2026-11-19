@@ -195,7 +195,7 @@ fn refine(
 
 /// Numbers keys densely in key order: equal keys get equal ids. Returns the ids
 /// and the number of distinct keys.
-fn assign_ids<K: Ord + Clone>(keys: impl Iterator<Item = K>) -> (Vec<usize>, usize) {
+pub(crate) fn assign_ids<K: Ord + Clone>(keys: impl Iterator<Item = K>) -> (Vec<usize>, usize) {
     let keys: Vec<K> = keys.collect();
     let mut ids: BTreeMap<K, usize> = keys.iter().cloned().map(|k| (k, 0)).collect();
     for (n, id) in ids.values_mut().enumerate() {

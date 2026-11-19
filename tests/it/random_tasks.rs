@@ -20,6 +20,7 @@ fn unshrunk_and_bisimulation_are_perfect() {
             shrink: NoShrink,
             prune: false,
             max_states: usize::MAX,
+            label_reduction: true,
         }
         .build(&task);
         let bisim = MergeAndShrink {
@@ -27,6 +28,7 @@ fn unshrunk_and_bisimulation_are_perfect() {
             shrink: Bisimulation,
             prune: false,
             max_states: usize::MAX,
+            label_reduction: true,
         }
         .build(&task);
         assert!(bisim.num_abstract_states() <= full.num_abstract_states());

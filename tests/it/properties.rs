@@ -1,36 +1,40 @@
-//! Properties of merge-and-shrink over random tasks and random linear merge orders.
+//! Properties of merge-and-shrink over random tasks, merge strategies and
+//! label reduction settings.
 //!
 //! Each property compares against the exact heuristic `h*` from
 //! [`sas_plus::Task::perfect_heuristic`]. `None` means a dead end.
 
 use merge_and_shrink::{
-    Bisimulation, GreedyBisimulation, LinearMerge, MergeAndShrink, MergeAndShrinkHeuristic,
-    NoShrink, ShrinkStrategy,
+    Bisimulation, GreedyBisimulation, MergeAndShrinkHeuristic, NoShrink, ShrinkStrategy,
 };
 use proptest::prelude::*;
-use sas_plus::Task;
+use sas_plus::{Abstraction, Task, Transition};
 
 use crate::strategies::{Case, case, rich_case, states_of};
 
-/// Builds the heuristic for `case` in its merge order, without pruning or a size limit.
+/// Builds the heuristic for `case` without pruning or a size limit.
 fn unpruned<S: ShrinkStrategy>(case: &Case, shrink: S) -> MergeAndShrinkHeuristic {
-    bounded(case, shrink, usize::MAX)
+    case.build(shrink, false, usize::MAX)
 }
 
-/// Builds the heuristic for `case` in its merge order, without pruning, with
-/// at most `max_states` states per product.
-fn bounded<S: ShrinkStrategy>(
-    case: &Case,
-    shrink: S,
-    max_states: usize,
-) -> MergeAndShrinkHeuristic {
-    MergeAndShrink {
-        merge: LinearMerge::new(case.order.clone()),
-        shrink,
-        prune: false,
-        max_states,
+/// Builds the heuristic for `case` with exact or greedy bisimulation, without
+/// pruning, with at most `max_states` states per product.
+fn bounded(case: &Case, greedy: bool, max_states: usize) -> MergeAndShrinkHeuristic {
+    if greedy {
+        case.build(GreedyBisimulation, false, max_states)
+    } else {
+        case.build(Bisimulation, false, max_states)
     }
-    .build(&case.task)
+}
+
+/// Checks that `h` equals `h*` on every state of `task`.
+fn assert_perfect(h: &MergeAndShrinkHeuristic, task: &Task) -> Result<(), TestCaseError> {
+    let h_star = task.perfect_heuristic();
+    for s in states_of(task) {
+        prop_assert_eq!(h.value(&s), h_star(&s), "{:?}", s);
+    }
+
+    Ok(())
 }
 
 /// Checks that `h` never exceeds `h*` on any state of `task` and never claims a
@@ -70,23 +74,13 @@ proptest! {
     /// Without shrinking, the final factor is the full state space: h = h* on every state.
     #[test]
     fn no_shrink_is_perfect(case in case()) {
-        let h = unpruned(&case, NoShrink);
-        let h_star = case.task.perfect_heuristic();
-
-        for s in states_of(&case.task) {
-            prop_assert_eq!(h.value(&s), h_star(&s), "{:?}", s);
-        }
+        assert_perfect(&unpruned(&case, NoShrink), &case.task)?;
     }
 
     /// Exact goal-respecting bisimulation preserves goal distances: h = h* on every state.
     #[test]
     fn bisimulation_is_perfect(case in case()) {
-        let h = unpruned(&case, Bisimulation);
-        let h_star = case.task.perfect_heuristic();
-
-        for s in states_of(&case.task) {
-            prop_assert_eq!(h.value(&s), h_star(&s), "{:?}", s);
-        }
+        assert_perfect(&unpruned(&case, Bisimulation), &case.task)?;
     }
 
     /// Bisimulation never has more abstract states than the unshrunk product.
@@ -101,8 +95,7 @@ proptest! {
     /// Pruning drops only unreachable and dead states, so h* survives on the initial state.
     #[test]
     fn pruned_bisimulation_is_perfect_on_the_initial_state(case in case()) {
-        let h = MergeAndShrink::new(LinearMerge::new(case.order.clone()), Bisimulation)
-            .build(&case.task);
+        let h = case.build(Bisimulation, true, usize::MAX);
         let h_star = case.task.perfect_heuristic();
 
         prop_assert_eq!(h.value(&case.task.initial), h_star(&case.task.initial));
@@ -128,13 +121,32 @@ proptest! {
         max_states in 1..=16_usize,
         greedy in any::<bool>(),
     ) {
-        let h = if greedy {
-            bounded(&case, GreedyBisimulation, max_states)
-        } else {
-            bounded(&case, Bisimulation, max_states)
-        };
+        let h = bounded(&case, greedy, max_states);
 
         assert_admissible(&h, &case.task)?;
         assert_within(&h, &case.task, max_states)?;
+    }
+
+    /// The abstraction is labeled with operator ids, label reduction or not:
+    /// every concrete transition `s -o-> t` has an abstract transition
+    /// `α(s) -o-> α(t)`, as cost partitioning requires.
+    #[test]
+    fn abstract_transitions_cover_every_operator(
+        case in case(),
+        max_states in 1..=32_usize,
+        greedy in any::<bool>(),
+    ) {
+        let h = bounded(&case, greedy, max_states);
+        let lts = h.lts();
+        for s in states_of(&case.task) {
+            for op in case.task.applicable_operators(&s) {
+                let t = case.task.apply(op, &s);
+                let src = h.abstract_state(&s).expect("not pruned");
+                let dst = h.abstract_state(&t).expect("not pruned");
+                let transition = Transition { src, label: op, dst };
+
+                prop_assert!(lts.transitions.contains(&transition), "{transition:?} missing");
+            }
+        }
     }
 }

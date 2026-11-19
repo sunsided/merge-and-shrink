@@ -59,6 +59,18 @@ impl MergeTree {
         }
     }
 
+    /// The task variables this tree reads, left to right.
+    pub(crate) fn variables(&self) -> Vec<VarId> {
+        match self {
+            Self::Leaf { var, .. } => vec![*var],
+            Self::Node { left, right, .. } => {
+                let mut vars = left.variables();
+                vars.extend(right.variables());
+                vars
+            }
+        }
+    }
+
     /// Maps every root table entry through `map` (old abstract state to new).
     fn compose(&mut self, map: &[Option<usize>]) {
         let (Self::Leaf { table, .. } | Self::Node { table, .. }) = self;

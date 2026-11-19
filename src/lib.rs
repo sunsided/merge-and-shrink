@@ -8,7 +8,7 @@
 //! tasks with conditional effects or derived variables, which atomic factors
 //! over-approximate.
 //!
-//! Each merge step picks two factors, shrinks both so that their product fits
+//! Each merge step picks two factors, reduces labels, shrinks both so that their product fits
 //! [`MergeAndShrink::max_states`], builds the product and prunes it.
 
 #![no_std]
@@ -16,15 +16,17 @@
 extern crate alloc;
 
 mod factor;
+mod labels;
 mod merge;
 mod shrink;
 
 pub use factor::{Factor, MergeTree};
-pub use merge::{LinearMerge, MergeStrategy};
+pub use merge::{Dfp, LinearMerge, MergeStrategy, SccDfp};
 pub use shrink::{Bisimulation, GreedyBisimulation, NoShrink, ShrinkStrategy};
 
 use alloc::vec::Vec;
 
+use labels::Labels;
 use sas_plus::{Abstraction, LabeledTransitionSystem, State, Task};
 
 /// Builder for a merge-and-shrink heuristic: a merge strategy, a shrink
@@ -41,10 +43,14 @@ pub struct MergeAndShrink<M, S> {
     /// merge, the two factors are shrunk to sizes whose product stays within
     /// it. `usize::MAX` means no limit.
     pub max_states: usize,
+    /// Before shrinking, combine labels (operators) of equal cost that only
+    /// one factor can tell apart. This is exact and lets bisimulation shrink
+    /// more; the final abstraction is labeled with operator ids again.
+    pub label_reduction: bool,
 }
 
 impl<M: MergeStrategy, S: ShrinkStrategy> MergeAndShrink<M, S> {
-    /// A builder with pruning enabled and no size limit.
+    /// A builder with pruning and label reduction enabled, and no size limit.
     #[must_use]
     pub fn new(merge: M, shrink: S) -> Self {
         Self {
@@ -52,6 +58,7 @@ impl<M: MergeStrategy, S: ShrinkStrategy> MergeAndShrink<M, S> {
             shrink,
             prune: true,
             max_states: usize::MAX,
+            label_reduction: true,
         }
     }
 
@@ -66,17 +73,19 @@ impl<M: MergeStrategy, S: ShrinkStrategy> MergeAndShrink<M, S> {
         assert!(self.max_states > 0, "max_states must be at least 1");
         let costs = task.costs();
         let mut factors = self.atomic_factors(task, &costs);
+        let mut labels = Labels::new(costs.len());
 
         for _ in 1..factors.len() {
-            let product = self.merge_next(&mut factors, &costs);
+            let product = self.merge_next(&mut factors, &mut labels, &costs);
             factors.push(Some(product));
         }
 
-        let factor = factors
+        let mut factor = factors
             .into_iter()
             .flatten()
             .next()
             .expect("task has at least one variable");
+        labels.expand(&mut factor.lts);
         let distances = factor.lts.goal_distances(&costs);
 
         MergeAndShrinkHeuristic { factor, distances }
@@ -96,11 +105,25 @@ impl<M: MergeStrategy, S: ShrinkStrategy> MergeAndShrink<M, S> {
             .collect()
     }
 
-    /// Takes the two factors the merge strategy picks, shrinks them to fit the
-    /// size limit, and returns their product, pruned.
-    fn merge_next(&mut self, factors: &mut [Option<Factor>], costs: &[u64]) -> Factor {
-        let (i, j) = self.merge.next_pair(factors);
+    /// Takes the two factors the merge strategy picks, reduces labels if
+    /// enabled, shrinks the factors to fit the size limit, and returns their
+    /// product, pruned.
+    fn merge_next(
+        &mut self,
+        factors: &mut [Option<Factor>],
+        labels: &mut Labels,
+        costs: &[u64],
+    ) -> Factor {
+        let (i, j) = self.merge.next_pair(factors, costs);
         assert_ne!(i, j, "merge strategy returned the same factor twice");
+        assert!(
+            factors[i].is_some() && factors[j].is_some(),
+            "merge strategy chose an inactive factor"
+        );
+        if self.label_reduction {
+            labels.reduce(factors, i, costs);
+            labels.reduce(factors, j, costs);
+        }
         let mut a = factors[i]
             .take()
             .expect("merge strategy chose an inactive factor");

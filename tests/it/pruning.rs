@@ -28,6 +28,7 @@ fn pruning_maps_unreachable_goal_states_to_none() {
             shrink: NoShrink,
             prune,
             max_states: usize::MAX,
+            label_reduction: true,
         }
         .build(&task)
     };
