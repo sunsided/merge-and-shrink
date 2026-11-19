@@ -34,7 +34,7 @@ use sas_plus::{Abstraction, LabeledTransitionSystem, State, Task};
 pub struct MergeAndShrink<M, S> {
     /// Picks the next two factors to merge.
     pub merge: M,
-    /// Shrinks each product right after it is built.
+    /// Shrinks each product after it is built and pruned.
     pub shrink: S,
     /// Remove unreachable and dead-end abstract states after each step.
     pub prune: bool,
@@ -92,7 +92,7 @@ impl<M: MergeStrategy, S: ShrinkStrategy> MergeAndShrink<M, S> {
     }
 
     /// Takes the two factors the merge strategy picks, and returns their
-    /// product, shrunk and pruned.
+    /// product, pruned and shrunk.
     fn merge_next(&mut self, factors: &mut [Option<Factor>], costs: &[u64]) -> Factor {
         let (i, j) = self.merge.next_pair(factors);
         assert_ne!(i, j, "merge strategy returned the same factor twice");
@@ -104,12 +104,14 @@ impl<M: MergeStrategy, S: ShrinkStrategy> MergeAndShrink<M, S> {
             .expect("merge strategy chose an inactive factor");
 
         let mut product = Factor::product(a, b);
-        if let Some((map, n)) = self.shrink.compute(&product, costs) {
-            product.apply_abstraction(&map, n);
-        }
-
+        // Pruning first keeps dead and unreachable states out of shrinking. Shrinking
+        // only merges live states, so it leaves nothing to prune afterwards.
         if self.prune {
             product.prune(costs);
+        }
+
+        if let Some((map, n)) = self.shrink.compute(&product, costs) {
+            product.apply_abstraction(&map, n);
         }
 
         product

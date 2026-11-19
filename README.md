@@ -22,16 +22,16 @@ The crate turns a SAS+ task (for example Fast Downward translator output, read t
 flowchart LR
   task[SAS+ task] --> atomic[one atomic factor per variable]
   atomic --> merge[merge two factors: synchronized product]
-  merge --> shrink[shrink: bisimulation]
-  shrink --> prune[prune unreachable and dead states]
-  prune -->|more than one factor left| merge
-  prune -->|one factor left| h[goal distances = heuristic]
+  merge --> prune[prune unreachable and dead states]
+  prune --> shrink[shrink: bisimulation]
+  shrink -->|more than one factor left| merge
+  shrink -->|one factor left| h[goal distances = heuristic]
 ```
 
 1. **Atomic factors.** Each variable becomes a small transition system over its values. Its labels are the task's operators.
 2. **Merge.** A merge strategy picks two factors and replaces them by their synchronized product: an operator moves both components at once, so the product tracks both variables together. `LinearMerge` merges the variables in a fixed order.
-3. **Shrink.** A shrink strategy groups product states that behave alike. `Bisimulation` starts from groups of states with the same goal distance and goal status, and splits them until all states in a group can reach the same groups by the same labels, which keeps every goal distance exact while often shrinking the product a lot. `NoShrink` keeps the full product.
-4. **Prune.** States that are unreachable from the initial state, or that cannot reach a goal, are dropped.
+3. **Prune.** States that are unreachable from the initial state, or that cannot reach a goal, are dropped.
+4. **Shrink.** A shrink strategy groups product states that behave alike. `Bisimulation` starts from groups of states with the same goal distance and goal status, and splits them until all states in a group can reach the same groups by the same labels, which keeps every goal distance exact while often shrinking the product a lot. `NoShrink` keeps the full product.
 5. **Evaluate.** After the last merge, the goal distances of the single remaining factor are the heuristic. A merge tree of lookup tables maps each concrete state to its abstract state, one table per merge, so evaluating a state is cheap.
 
 On plain SAS+ tasks, exact bisimulation makes the heuristic perfect: it equals the optimal cost on every state without pruning, and on every reachable state with pruning (`MergeAndShrink::new` prunes by default; pruned states evaluate to `None`). Conditional effects and derived variables (axioms) are over-approximated by the atomic factors, so there the heuristic stays admissible but can be lower.
