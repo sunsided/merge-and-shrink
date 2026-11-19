@@ -4,7 +4,9 @@
 //! Start from one atomic transition system per variable, then repeatedly
 //! *merge* two factors into their synchronized product and *shrink* the result
 //! by a state equivalence. Goal distances in the final factor are an
-//! admissible (and, with exact bisimulation, perfect) heuristic.
+//! admissible heuristic. With exact bisimulation it is perfect, except on
+//! tasks with conditional effects or derived variables, which atomic factors
+//! over-approximate.
 //!
 //! Status: atomic factors, products, linear merging, pruning, and exact
 //! goal-respecting bisimulation. Planned: label reduction, greedy/size-bounded

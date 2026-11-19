@@ -34,7 +34,7 @@ assert_eq!(h.value(&task.initial), Some(7));
 
 ## Tested
 
-Without shrinking, and with exact bisimulation, h equals h* on **every** state of random tasks, for any linear merge order. With pruning, h equals h* on the initial state. These hold as proptest properties and a fuzz target on random tasks, and on translator output.
+Without shrinking, and with exact bisimulation, h equals h* on **every** state of random tasks, for any linear merge order. With pruning, h equals h* on the initial state. With conditional effects and derived variables (axioms), which atomic factors over-approximate, h is admissible but not perfect. These hold as proptest properties and a fuzz target on random tasks, and on translator output.
 
 ## Features
 

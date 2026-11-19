@@ -13,17 +13,33 @@ pub struct Case {
     pub order: Vec<usize>,
 }
 
-/// Random tasks small enough to enumerate every state, with a shuffled merge order.
+/// Random plain SAS+ tasks small enough to enumerate every state, with a
+/// shuffled merge order.
 ///
 /// Up to 4 variables with up to 3 values each keep the state space at 81 states
 /// at most, so checking every state stays cheap.
 pub fn case() -> impl Strategy<Value = Case> {
+    cases(false)
+}
+
+/// Like [`case`], but with conditional effects and up to two derived variables.
+///
+/// Atomic factors over-approximate both features, so the heuristic is
+/// admissible on these tasks but not perfect.
+pub fn rich_case() -> impl Strategy<Value = Case> {
+    cases(true)
+}
+
+/// Random cases; `rich` adds conditional effects and derived variables.
+fn cases(rich: bool) -> impl Strategy<Value = Case> {
     (any::<u64>(), 1..=4_usize, 2..=3_u32, 1..=12_usize).prop_flat_map(
-        |(seed, num_vars, max_domain, num_ops)| {
+        move |(seed, num_vars, max_domain, num_ops)| {
             let params = RandomTaskParams {
                 num_vars,
                 max_domain,
                 num_ops,
+                max_conditions: if rich { 2 } else { 0 },
+                num_derived: if rich { 2 } else { 0 },
                 ..RandomTaskParams::default()
             };
             let task = random_task(seed, params);
