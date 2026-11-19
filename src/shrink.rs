@@ -39,11 +39,10 @@ impl ShrinkStrategy for Bisimulation {
         let h = lts.goal_distances(costs);
         let out = outgoing(lts);
 
-        let mut block = assign_ids((0..lts.num_states).map(|s| (lts.goal[s], h[s])));
-        let mut num_blocks = count_ids(&block);
+        let (mut block, mut num_blocks) =
+            assign_ids((0..lts.num_states).map(|s| (lts.goal[s], h[s])));
         loop {
-            let refined = refine(&block, &out);
-            let n = count_ids(&refined);
+            let (refined, n) = refine(&block, &out);
             block = refined;
             if n == num_blocks {
                 break;
@@ -67,8 +66,9 @@ fn outgoing(lts: &LabeledTransitionSystem) -> Vec<Vec<(usize, usize)>> {
 }
 
 /// One signature-refinement round: splits each block by the set of
-/// `(label, target block)` pairs its states can reach in one step.
-fn refine(block: &[usize], out: &[Vec<(usize, usize)>]) -> Vec<usize> {
+/// `(label, target block)` pairs its states can reach in one step. Returns the
+/// new blocks and their count.
+fn refine(block: &[usize], out: &[Vec<(usize, usize)>]) -> (Vec<usize>, usize) {
     let signatures = out.iter().enumerate().map(|(s, edges)| {
         let mut sig: Vec<(usize, usize)> = edges.iter().map(|&(l, d)| (l, block[d])).collect();
         sig.sort_unstable();
@@ -80,17 +80,16 @@ fn refine(block: &[usize], out: &[Vec<(usize, usize)>]) -> Vec<usize> {
     assign_ids(signatures)
 }
 
-/// Number of distinct ids produced by [`assign_ids`]: the largest id plus one.
-fn count_ids(ids: &[usize]) -> usize {
-    ids.iter().max().map_or(0, |m| m + 1)
-}
-
 /// Numbers keys densely in order of first appearance: equal keys get equal ids.
-fn assign_ids<K: Ord>(keys: impl Iterator<Item = K>) -> Vec<usize> {
+/// Returns the ids and the number of distinct keys.
+fn assign_ids<K: Ord>(keys: impl Iterator<Item = K>) -> (Vec<usize>, usize) {
     let mut ids = BTreeMap::new();
-    keys.map(|k| {
-        let n = ids.len();
-        *ids.entry(k).or_insert(n)
-    })
-    .collect()
+    let assigned = keys
+        .map(|k| {
+            let n = ids.len();
+            *ids.entry(k).or_insert(n)
+        })
+        .collect();
+
+    (assigned, ids.len())
 }

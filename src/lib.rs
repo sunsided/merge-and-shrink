@@ -13,7 +13,6 @@
 //! bisimulation, DFP/SCC-DFP merging, shrinking *before* merging.
 
 #![no_std]
-#![forbid(unsafe_code)]
 
 extern crate alloc;
 
