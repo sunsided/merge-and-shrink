@@ -30,17 +30,17 @@ flowchart LR
 
 1. **Atomic factors.** Each variable becomes a small transition system over its values. Its labels are the task's operators.
 2. **Merge.** A merge strategy picks two factors and replaces them by their synchronized product: an operator moves both components at once, so the product tracks both variables together. `LinearMerge` merges the variables in a fixed order.
-3. **Shrink.** A shrink strategy groups product states that behave alike. `Bisimulation` merges states with the same goal distance and the same labeled transitions into the same groups, which keeps every goal distance exact while often shrinking the product a lot. `NoShrink` keeps the full product.
+3. **Shrink.** A shrink strategy groups product states that behave alike. `Bisimulation` starts from groups of states with the same goal distance and goal status, and splits them until all states in a group can reach the same groups by the same labels, which keeps every goal distance exact while often shrinking the product a lot. `NoShrink` keeps the full product.
 4. **Prune.** States that are unreachable from the initial state, or that cannot reach a goal, are dropped.
 5. **Evaluate.** After the last merge, the goal distances of the single remaining factor are the heuristic. A merge tree of lookup tables maps each concrete state to its abstract state, one table per merge, so evaluating a state is cheap.
 
-On plain SAS+ tasks, exact bisimulation makes the heuristic perfect: it equals the optimal cost. Conditional effects and derived variables (axioms) are over-approximated by the atomic factors, so there the heuristic stays admissible but can be lower.
+On plain SAS+ tasks, exact bisimulation makes the heuristic perfect: it equals the optimal cost on every state without pruning, and on every reachable state with pruning (`MergeAndShrink::new` prunes by default; pruned states evaluate to `None`). Conditional effects and derived variables (axioms) are over-approximated by the atomic factors, so there the heuristic stays admissible but can be lower.
 
 ## Who it is for
 
 - People building optimal planners or search algorithms in Rust who need a strong admissible heuristic.
 - Researchers and students experimenting with abstraction heuristics, merge or shrink strategies, or cost partitioning, who want a small, readable, tested implementation.
-- Anyone who needs a reference h* on small tasks: with exact bisimulation the result is perfect, so it can check other heuristics.
+- Anyone who needs a reference h* on small tasks: with exact bisimulation and `prune: false`, the result is perfect on every state, so it can check other heuristics.
 
 Exact bisimulation does not bound the abstraction size, and only linear merging exists so far, so the final factor can grow exponentially on large tasks. For those, use Fast Downward until size-bounded shrinking and smarter merge strategies land (see the roadmap).
 
