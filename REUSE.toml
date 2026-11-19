@@ -1,0 +1,20 @@
+version = 1
+
+# Default: everything under the project license expression.
+[[annotations]]
+path = "**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Markus Mayer"
+SPDX-License-Identifier = "MIT OR Apache-2.0"
+
+# Test inputs from VHPOP's examples and the translator output derived from them.
+[[annotations]]
+path = [
+  "tests/fixtures/translated/sussman-anomaly/**",
+  "tests/fixtures/translated/gripper-2/**",
+  "tests/fixtures/translated/gripper-4/**",
+  "tests/fixtures/translated/COPYING.vhpop",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2002-2005 Carnegie Mellon University"
+SPDX-License-Identifier = "GPL-2.0-or-later"
