@@ -7,5 +7,7 @@
 //! admissible (and, with exact bisimulation, perfect) heuristic.
 
 mod factor;
+mod merge;
 
 pub use factor::{Factor, MergeTree};
+pub use merge::{LinearMerge, MergeStrategy};
