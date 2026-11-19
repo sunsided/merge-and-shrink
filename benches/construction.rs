@@ -17,10 +17,7 @@ fn gripper_4() -> Task {
     );
     let text = std::fs::read_to_string(path).expect("fixture is readable");
 
-    SasFile::parse(&text)
-        .expect("fixture parses")
-        .to_task()
-        .expect("fixture is a valid task")
+    SasFile::parse(&text).expect("fixture parses").to_task()
 }
 
 /// Times building the heuristic with and without exact bisimulation, and

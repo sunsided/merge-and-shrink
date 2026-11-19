@@ -75,17 +75,22 @@ pub struct Factor {
 
 impl Factor {
     /// The atomic transition system of one variable.
+    ///
+    /// A derived variable has a single abstract state that all of its values
+    /// map to: projections drop derived variables and treat conditions on them
+    /// as satisfiable.
     #[must_use]
     pub fn atomic(task: &Task, var: VarId) -> Self {
         let p = Projection::new(task, vec![var]);
-        let n = p.lts().num_states;
+        let table = if p.pattern().is_empty() {
+            vec![Some(0); task.variables[var].domain_size as usize]
+        } else {
+            (0..p.lts().num_states).map(Some).collect()
+        };
 
         Self {
             lts: p.lts().clone(),
-            tree: MergeTree::Leaf {
-                var,
-                table: (0..n).map(Some).collect(),
-            },
+            tree: MergeTree::Leaf { var, table },
         }
     }
 

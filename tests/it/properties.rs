@@ -6,7 +6,7 @@
 use merge_and_shrink::{Bisimulation, LinearMerge, MergeAndShrink, NoShrink, ShrinkStrategy};
 use proptest::prelude::*;
 
-use crate::strategies::{Case, case, states_of};
+use crate::strategies::{Case, case, rich_case, states_of};
 
 /// Builds the heuristic for `case` in its merge order, without pruning.
 fn unpruned<S: ShrinkStrategy>(
@@ -61,5 +61,21 @@ proptest! {
         let h_star = case.task.perfect_heuristic();
 
         prop_assert_eq!(h.value(&case.task.initial), h_star(&case.task.initial));
+    }
+
+    /// With conditional effects and derived variables, exact bisimulation stays
+    /// admissible on every state and never claims a false dead end.
+    #[test]
+    fn bisimulation_is_admissible_with_conditional_effects_and_axioms(case in rich_case()) {
+        let h = unpruned(&case, Bisimulation);
+        let h_star = case.task.perfect_heuristic();
+
+        for s in states_of(&case.task) {
+            match (h.value(&s), h_star(&s)) {
+                (Some(h), Some(opt)) => prop_assert!(h <= opt, "{h} > h* {opt} in {s:?}"),
+                (None, opt) => prop_assert_eq!(opt, None, "false dead end in {:?}", s),
+                (Some(_), None) => {}
+            }
+        }
     }
 }

@@ -160,12 +160,13 @@ tasks:
       - cargo deny --all-features check
 
   msrv:
-    desc: Check every crate on its declared rust-version
+    desc: Check every library on its declared rust-version
     preconditions:
       - sh: cargo hack --version
         msg: "cargo-hack not found - cargo install --locked cargo-hack"
     cmds:
-      - cargo hack check --rust-version --workspace --all-targets --ignore-private
+      # The library only: dev-dependencies (criterion, proptest) may need a newer toolchain.
+      - cargo hack check --rust-version --workspace --lib --ignore-private
 
   semver:
     desc: Check published library crates for semver violations

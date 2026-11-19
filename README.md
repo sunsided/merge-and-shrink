@@ -20,7 +20,7 @@ use sas_plus::fdr::SasFile;
 
 # let output_sas = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/gripper-costs/output.sas");
 // `output_sas` is the path of a translator output file.
-let task = SasFile::parse(&std::fs::read_to_string(output_sas)?)?.to_task()?;
+let task = SasFile::parse(&std::fs::read_to_string(output_sas)?)?.to_task();
 
 let merge = LinearMerge::in_variable_order(task.num_variables());
 let h = MergeAndShrink::new(merge, Bisimulation).build(&task);
@@ -34,11 +34,11 @@ assert_eq!(h.value(&task.initial), Some(7));
 
 ## Tested
 
-Without shrinking, and with exact bisimulation, h equals h* on **every** state of random tasks, for any linear merge order. With pruning, h equals h* on the initial state. These hold as proptest properties and a fuzz target on random tasks, and on translator output.
+Without shrinking, and with exact bisimulation, h equals h* on **every** state of random tasks, for any linear merge order. With pruning, h equals h* on the initial state. With conditional effects and derived variables (axioms), which atomic factors over-approximate, h is admissible but not perfect. These hold as proptest properties and a fuzz target on random tasks, and on translator output.
 
 ## Features
 
-The crate has no Cargo features. It depends on `sas-plus` 0.1.
+The crate has no Cargo features. It depends on `sas-plus` 0.2.
 
 ## MSRV
 
