@@ -6,6 +6,7 @@
 //! - [`merge_strategies`]: which pairs the score-based merge strategies pick.
 //! - [`pruning`]: what pruned states evaluate to.
 //! - [`random_tasks`]: fixed seeds of random tasks, checked on every state.
+//! - [`shrinking`]: edge cases of the shrink strategies.
 //! - [`properties`]: property tests over random tasks and merge orders, checked
 //!   against the exact heuristic `h*`.
 
@@ -16,4 +17,5 @@ mod merge_strategies;
 mod properties;
 mod pruning;
 mod random_tasks;
+mod shrinking;
 mod strategies;

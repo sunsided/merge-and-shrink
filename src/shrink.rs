@@ -72,9 +72,11 @@ impl ShrinkStrategy for Bisimulation {
 /// [`Bisimulation`], but signatures only contain transitions that start an
 /// optimal path to the goal (`h(s) = c(l) + h(t)`).
 ///
-/// It preserves the goal distances of the factor it shrinks, so it is coarser
-/// than exact bisimulation at no cost there, but it does not compose with later
-/// merges: the final heuristic is admissible, not perfect.
+/// Within the size limit it preserves the goal distances of the factor it
+/// shrinks, so it is coarser than exact bisimulation at no cost there, but it
+/// does not compose with later merges: the final heuristic is admissible, not
+/// perfect. At the limit it behaves like [`Bisimulation`], and only
+/// admissibility remains.
 pub struct GreedyBisimulation;
 
 impl ShrinkStrategy for GreedyBisimulation {
@@ -90,12 +92,21 @@ impl ShrinkStrategy for GreedyBisimulation {
 
 /// Signature refinement from the goal-distance partition, with at most
 /// `max_states` blocks. `greedy` keeps only transitions on optimal paths.
+///
+/// # Panics
+///
+/// Panics if `max_states` is 0 and `lts` has states.
 fn bisimulation(
     lts: &LabeledTransitionSystem,
     costs: &[u64],
     max_states: usize,
     greedy: bool,
 ) -> Option<(Vec<Option<usize>>, usize)> {
+    if lts.num_states == 0 {
+        return None;
+    }
+    assert!(max_states > 0, "max_states must be at least 1");
+
     let h = lts.goal_distances(costs);
     let out = outgoing(lts, costs, &h, greedy);
 
@@ -133,8 +144,10 @@ fn outgoing(
 ) -> Vec<Vec<(usize, usize)>> {
     let mut out: Vec<Vec<(usize, usize)>> = vec![Vec::new(); lts.num_states];
     for t in &lts.transitions {
-        let optimal = h[t.src].is_some() && h[t.src] == h[t.dst].map(|d| d + costs[t.label]);
-        if !greedy || optimal {
+        let optimal = || {
+            h[t.src].is_some() && h[t.src] == h[t.dst].and_then(|d| d.checked_add(costs[t.label]))
+        };
+        if !greedy || optimal() {
             out[t.src].push((t.label, t.dst));
         }
     }
