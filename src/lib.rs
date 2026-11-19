@@ -2,14 +2,17 @@
 //! Sievers & Helmert 2021).
 //!
 //! Start from one atomic transition system per variable, then repeatedly
-//! *merge* two factors into their synchronized product and *shrink* the result
-//! by a state equivalence. Goal distances in the final factor are an
-//! admissible heuristic. With exact bisimulation it is perfect, except on
-//! tasks with conditional effects or derived variables, which atomic factors
-//! over-approximate.
+//! *shrink* two factors by a state equivalence and *merge* them into their
+//! synchronized product. Goal distances in the final factor are an admissible
+//! heuristic. With exact bisimulation and no size limit it is perfect, except
+//! on tasks with conditional effects or derived variables, which atomic
+//! factors over-approximate.
 //!
-//! Each merge step picks two factors, reduces labels, shrinks both so that their product fits
-//! [`MergeAndShrink::max_states`], builds the product and prunes it.
+//! Each step lets the [`MergeStrategy`] pick two factors ([`LinearMerge`],
+//! [`Dfp`], [`SccDfp`]), optionally reduces labels, shrinks both with the
+//! [`ShrinkStrategy`] so that their product fits [`MergeAndShrink::max_states`]
+//! ([`Bisimulation`], [`GreedyBisimulation`], [`NoShrink`]), builds the
+//! product and prunes it.
 
 #![no_std]
 
