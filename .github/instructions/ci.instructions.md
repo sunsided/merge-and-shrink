@@ -8,7 +8,7 @@ summary: Keep task ci, ci.yml and hooks in sync; pinned, least-privilege workflo
 
 - `task ci` in `Taskfile.dist.yaml` mirrors the jobs in `.github/workflows/ci.yml`: `branch`
   (`lint:branch`), `fmt` (`fmt:check`), `clippy`, `style` (`lint:separators`, `lint:readme`,
-  `lint:typos`), `doc`, `test`, `deny`, `msrv` and `fuzz` (`fuzz:build`, `fuzz:lint`).
+  `lint:typos`), `doc`, `test`, `no-std` (`build:no-std`), `deny`, `msrv` and `fuzz` (`fuzz:build`, `fuzz:lint`).
   `coverage` and `semver` are CI-only by design. A change that
   adds, removes or renames a job, or changes its flags, changes both files.
 - `.github/workflows/actions-lint.yml` runs actionlint and zizmor, like `task lint:actions`.

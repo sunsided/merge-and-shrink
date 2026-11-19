@@ -1,6 +1,10 @@
 //! Factors of a factored transition system and the merge trees that map
 //! concrete states into them.
 
+use alloc::boxed::Box;
+use alloc::vec;
+use alloc::vec::Vec;
+
 use sas_plus::{Abstraction, LabeledTransitionSystem, Projection, State, Task, Transition, VarId};
 
 /// Maps concrete states to abstract states of a factor ("cascading tables").
