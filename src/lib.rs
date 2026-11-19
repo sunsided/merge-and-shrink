@@ -125,7 +125,10 @@ pub struct MergeAndShrinkHeuristic {
 }
 
 impl MergeAndShrinkHeuristic {
-    /// Admissible estimate of the cost to the goal; `None` = dead end.
+    /// Admissible estimate of the cost to the goal.
+    ///
+    /// `None` means `state` is a dead end, or, with pruning, a state that is
+    /// unreachable from the task's initial state (even a goal state).
     #[must_use]
     pub fn value(&self, state: &State) -> Option<u64> {
         self.factor

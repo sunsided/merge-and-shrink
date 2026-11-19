@@ -14,7 +14,7 @@ Merge-and-shrink abstraction heuristics for factored transition systems: atomic 
 
 Optimal planners such as A* need a heuristic that never overestimates the cost to the goal. Abstraction heuristics get one by mapping the huge concrete state space onto a much smaller abstract one, computing exact goal distances there, and using those distances as lower bounds. Merge-and-shrink builds such abstractions over *all* variables of a task at once, so it can capture interactions between variables that pattern databases, which project onto a few variables, cannot see.
 
-The crate turns a SAS+ task (for example Fast Downward translator output, read through `sas-plus`) into a heuristic you can query per state: `value` returns the estimated cost, or `None` when the state is a proven dead end. Because the heuristic also implements `sas_plus::Abstraction`, it plugs into [`cost-partition`](https://github.com/sunsided/cost-partition), which adds up several abstraction heuristics admissibly.
+The crate turns a SAS+ task (for example Fast Downward translator output, read through `sas-plus`) into a heuristic you can query per state: `value` returns the estimated cost, or `None` when the state is a proven dead end or was pruned as unreachable from the initial state. Because the heuristic also implements `sas_plus::Abstraction`, it plugs into [`cost-partition`](https://github.com/sunsided/cost-partition), which adds up several abstraction heuristics admissibly.
 
 ## How it works
 
@@ -64,7 +64,7 @@ assert_eq!(h.value(&task.initial), Some(7));
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
-`None` from `value` means a dead end: no plan exists from that state.
+`None` from `value` means a dead end: no plan exists from that state. With pruning (the default), states unreachable from the task's initial state also evaluate to `None`, even goal states, so build with `prune: false` to evaluate states from another start.
 
 ## Tested
 
