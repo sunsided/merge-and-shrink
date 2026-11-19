@@ -18,9 +18,11 @@ pub trait ShrinkStrategy {
     ///
     /// With pruning, `factor` has only live states (reachable and able to reach
     /// a goal) and is not pruned again after shrinking. Merging states keeps
-    /// every class live; `None` entries or unused class ids can leave dead or
-    /// unreachable states in the factor. These keep the heuristic admissible,
-    /// but make it larger than needed.
+    /// every class live. Unused class ids leave empty classes, which keep the
+    /// heuristic admissible but make the factor larger. A `None` entry deletes
+    /// a state: its concrete states evaluate to `None`, which is inadmissible
+    /// if they can reach a goal, and states whose paths ran through it can
+    /// become dead ends that stay in the factor.
     fn compute(&self, factor: &Factor, costs: &[u64]) -> Option<(Vec<Option<usize>>, usize)>;
 }
 
