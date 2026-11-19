@@ -36,7 +36,7 @@ pub fn case() -> impl Strategy<Value = Case> {
 }
 
 /// Every state of a task with the given variable domain sizes, in lexicographic order.
-pub fn all_states(domains: &[u32]) -> Vec<State> {
+fn all_states(domains: &[u32]) -> Vec<State> {
     let mut states = vec![State(vec![])];
     for &d in domains {
         states = states

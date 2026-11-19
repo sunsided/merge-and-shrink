@@ -1,6 +1,9 @@
+//! Fast Downward translator output with known optimal costs.
+
 use merge_and_shrink::{Bisimulation, LinearMerge, MergeAndShrink};
 use sas_plus::fdr::SasFile;
 
+/// Exact bisimulation finds the optimal cost of each translated task.
 #[test]
 fn bisimulation_is_perfect_on_translator_output() {
     for (name, optimum) in [("sussman-anomaly", 3), ("gripper-2", 3), ("gripper-4", 9)] {

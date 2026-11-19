@@ -1,7 +1,9 @@
+//! Fixed seeds of random tasks, checked against `h*` on every state.
+
 use merge_and_shrink::{Bisimulation, LinearMerge, MergeAndShrink, NoShrink};
 use sas_plus::random::{RandomTaskParams, random_task};
 
-use crate::strategies::all_states;
+use crate::strategies::states_of;
 
 /// Without shrinking, the final factor is the full state space: h = h*.
 /// Exact bisimulation preserves goal distances: still h = h*, but smaller.
@@ -10,7 +12,6 @@ fn unshrunk_and_bisimulation_are_perfect() {
     for seed in 0..150 {
         let task = random_task(seed, RandomTaskParams::default());
         let h_star = task.perfect_heuristic();
-        let domains: Vec<u32> = task.variables.iter().map(|v| v.domain_size).collect();
         let n = task.num_variables();
 
         let full = MergeAndShrink {
@@ -26,7 +27,8 @@ fn unshrunk_and_bisimulation_are_perfect() {
         }
         .build(&task);
         assert!(bisim.num_abstract_states() <= full.num_abstract_states());
-        for s in all_states(&domains) {
+
+        for s in states_of(&task) {
             assert_eq!(full.value(&s), h_star(&s), "seed {seed}, no shrink, {s:?}");
             assert_eq!(
                 bisim.value(&s),

@@ -1,13 +1,23 @@
+//! Shrink strategies: state equivalences that make a factor smaller.
+
 use std::collections::HashMap;
+
+use sas_plus::LabeledTransitionSystem;
 
 use crate::Factor;
 
 /// Computes a state equivalence for a factor: `Some((map, num_classes))`, or
 /// `None` to leave it unchanged.
 pub trait ShrinkStrategy {
+    /// The equivalence for `factor` under per-label `costs`.
+    ///
+    /// `map` has one entry per state of `factor.lts`, with class ids in
+    /// `0..num_classes`; `None` entries prune the state.
     fn compute(&self, factor: &Factor, costs: &[u64]) -> Option<(Vec<Option<usize>>, usize)>;
 }
 
+/// Never shrinks: the factors keep every state, so the heuristic is perfect but
+/// the final factor is the full product.
 pub struct NoShrink;
 
 impl ShrinkStrategy for NoShrink {
@@ -25,33 +35,55 @@ impl ShrinkStrategy for Bisimulation {
     fn compute(&self, factor: &Factor, costs: &[u64]) -> Option<(Vec<Option<usize>>, usize)> {
         let lts = &factor.lts;
         let h = lts.goal_distances(costs);
-        let mut out: Vec<Vec<(usize, usize)>> = vec![Vec::new(); lts.num_states];
-        for t in &lts.transitions {
-            out[t.src].push((t.label, t.dst));
-        }
+        let out = outgoing(lts);
 
         let mut block = assign_ids((0..lts.num_states).map(|s| (lts.goal[s], h[s])));
-        let mut num_blocks = block.iter().max().map_or(0, |m| m + 1);
+        let mut num_blocks = count_ids(&block);
         loop {
-            let signatures = (0..lts.num_states).map(|s| {
-                let mut sig: Vec<(usize, usize)> =
-                    out[s].iter().map(|&(l, d)| (l, block[d])).collect();
-                sig.sort_unstable();
-                sig.dedup();
-                (block[s], sig)
-            });
-            let refined = assign_ids(signatures);
-            let n = refined.iter().max().map_or(0, |m| m + 1);
+            let refined = refine(&block, &out);
+            let n = count_ids(&refined);
             block = refined;
             if n == num_blocks {
                 break;
             }
+
             num_blocks = n;
         }
+
         (num_blocks < lts.num_states).then(|| (block.into_iter().map(Some).collect(), num_blocks))
     }
 }
 
+/// Outgoing `(label, target)` pairs per state of `lts`.
+fn outgoing(lts: &LabeledTransitionSystem) -> Vec<Vec<(usize, usize)>> {
+    let mut out: Vec<Vec<(usize, usize)>> = vec![Vec::new(); lts.num_states];
+    for t in &lts.transitions {
+        out[t.src].push((t.label, t.dst));
+    }
+
+    out
+}
+
+/// One signature-refinement round: splits each block by the set of
+/// `(label, target block)` pairs its states can reach in one step.
+fn refine(block: &[usize], out: &[Vec<(usize, usize)>]) -> Vec<usize> {
+    let signatures = out.iter().enumerate().map(|(s, edges)| {
+        let mut sig: Vec<(usize, usize)> = edges.iter().map(|&(l, d)| (l, block[d])).collect();
+        sig.sort_unstable();
+        sig.dedup();
+
+        (block[s], sig)
+    });
+
+    assign_ids(signatures)
+}
+
+/// Number of distinct ids produced by [`assign_ids`]: the largest id plus one.
+fn count_ids(ids: &[usize]) -> usize {
+    ids.iter().max().map_or(0, |m| m + 1)
+}
+
+/// Numbers keys densely in order of first appearance: equal keys get equal ids.
 fn assign_ids<K: std::hash::Hash + Eq>(keys: impl Iterator<Item = K>) -> Vec<usize> {
     let mut ids = HashMap::new();
     keys.map(|k| {

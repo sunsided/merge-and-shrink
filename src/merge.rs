@@ -1,3 +1,5 @@
+//! Merge strategies: which two factors to combine next.
+
 use sas_plus::VarId;
 
 use crate::Factor;
@@ -5,18 +7,30 @@ use crate::Factor;
 /// Chooses which two active factors to merge next. The product is appended
 /// at the end of the factor list (index `factors.len()` at the time of the call).
 pub trait MergeStrategy {
+    /// The indices of the next two factors to merge, in that order.
+    ///
+    /// `factors` holds every factor created so far; merged ones are `None`.
+    /// Both indices must point at active (`Some`) factors and differ.
     fn next_pair(&mut self, factors: &[Option<Factor>]) -> (usize, usize);
 }
 
 /// Merges variables in a fixed order: `((v0 ⊗ v1) ⊗ v2) ⊗ ...`.
 #[derive(Clone, Debug)]
 pub struct LinearMerge {
+    /// The variables in merge order. Must contain every variable exactly once.
     order: Vec<VarId>,
+    /// Number of entries of `order` merged so far.
     next: usize,
+    /// Index of the composite factor built so far; `None` before the first merge.
     composite: Option<usize>,
 }
 
 impl LinearMerge {
+    /// Merges the atomic factors of `order` from first to last.
+    ///
+    /// `order` must be a permutation of the task's variables; building panics
+    /// otherwise.
+    #[must_use]
     pub fn new(order: Vec<VarId>) -> Self {
         Self {
             order,
@@ -25,6 +39,8 @@ impl LinearMerge {
         }
     }
 
+    /// Merges variables `0..num_vars` in index order.
+    #[must_use]
     pub fn in_variable_order(num_vars: usize) -> Self {
         Self::new((0..num_vars).collect())
     }
@@ -43,6 +59,7 @@ impl MergeStrategy for LinearMerge {
             }
         };
         self.composite = Some(factors.len());
+
         pair
     }
 }
