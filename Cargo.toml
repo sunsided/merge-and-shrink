@@ -7,3 +7,6 @@ license = "MIT OR Apache-2.0"
 rust-version = "1.85"
 repository = "https://github.com/sunsided/merge-and-shrink"
 readme = "README.md"
+
+[dependencies]
+sas-plus = { version = "0.1.0" }
