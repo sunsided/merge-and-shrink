@@ -1,14 +1,14 @@
 [package]
 name = "merge-and-shrink"
-description = "Merge-and-shrink abstraction heuristics for factored transition systems"
+description = "Merge-and-shrink abstraction heuristics for SAS+ planning, with DFP and SCC-DFP merging, label reduction and bisimulation shrinking"
 version = "0.3.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 rust-version = "1.85"
 repository = "https://github.com/sunsided/merge-and-shrink"
 readme = "README.md"
-keywords = ["planning", "merge-and-shrink", "heuristic", "abstraction", "fast-downward"]
-categories = ["algorithms", "science", "no-std"]
+keywords = ["planning", "merge-and-shrink", "heuristic", "abstraction", "bisimulation"]
+categories = ["algorithms", "artificial-intelligence", "science", "no-std"]
 # GPL-2.0-or-later test inputs and their license text; see tests/fixtures/README.md
 exclude = ["tests/fixtures/translated", "LICENSES/GPL-2.0-or-later.txt"]
 
