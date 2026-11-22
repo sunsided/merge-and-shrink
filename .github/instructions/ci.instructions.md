@@ -23,5 +23,11 @@ summary: Keep task ci, ci.yml and hooks in sync; pinned, least-privilege workflo
 - Do not rename `publish-crates-io.yml` or its `crates-io` environment: crates.io trusted
   publishing is bound to both.
 - `scripts/check-branch.sh` is the single definition of allowed branch names (GitHub Flow).
+- `dependencies` (`dependency submission`) in `ci.yml` runs only on pushes to `main`: it
+  generates an SPDX SBOM with cargo-sbom and submits it to the dependency graph. It is
+  CI-only and not a required check.
+- `zizmor-sarif` (`zizmor (code scanning)`) in `actions-lint.yml` runs only on pushes to
+  `main` and uploads zizmor's findings as SARIF to the Security tab without failing. The
+  blocking `zizmor` job stays the merge gate; `zizmor-sarif` is not a required check.
 - New jobs that should gate merges must also be added to the ruleset's required checks. Say so
   in the PR.
