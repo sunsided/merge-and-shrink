@@ -8,13 +8,27 @@
 [![License](https://img.shields.io/crates/l/merge-and-shrink)](https://github.com/sunsided/merge-and-shrink#license)
 [![unsafe forbidden](https://img.shields.io/badge/unsafe-forbidden-success.svg)](https://github.com/rust-secure-code/safety-dance/)
 
-Merge-and-shrink abstraction heuristics for factored transition systems: atomic factors, synchronized products, linear, DFP and SCC-DFP merge strategies, exact label reduction, pruning of unreachable and dead states, and exact, greedy and size-bounded goal-respecting bisimulation. The resulting heuristic implements `sas_plus::Abstraction`, so it can feed [`cost-partition`](https://github.com/sunsided/cost-partition).
-
-## What it is for
+Merge-and-shrink abstraction heuristics for factored transition systems, in `no_std` Rust (with `alloc`) and without unsafe code: atomic factors, synchronized products, linear, DFP and SCC-DFP merge strategies, exact label reduction, pruning of unreachable and dead states, and exact, greedy and size-bounded goal-respecting bisimulation.
 
 Optimal planners such as A* need a heuristic that never overestimates the cost to the goal. Abstraction heuristics get one by mapping the huge concrete state space onto a much smaller abstract one, computing exact goal distances there, and using those distances as lower bounds. Merge-and-shrink builds such abstractions over *all* variables of a task at once, so it can capture interactions between variables that pattern databases, which project onto a few variables, cannot see.
 
 The crate turns a SAS+ task (for example Fast Downward translator output, read through `sas-plus`) into a heuristic you can query per state: `value` returns the estimated cost, or `None` when the state is a proven dead end or was pruned as unreachable from the initial state. Because the heuristic also implements `sas_plus::Abstraction`, it plugs into [`cost-partition`](https://github.com/sunsided/cost-partition), which adds up several abstraction heuristics admissibly.
+
+## Who this is for
+
+- People building optimal planners or search algorithms in Rust who need a strong admissible heuristic; the heuristic search itself, A* and friends, lives in [`heuristic-search`](https://github.com/sunsided/heuristic-search).
+- Researchers and students experimenting with abstraction heuristics, merge or shrink strategies, or cost partitioning, who want a small, readable, tested implementation to change and measure.
+- Anyone who needs a reference h* on small tasks: with exact bisimulation and `prune: false`, the result is perfect on every state, so it can check other heuristics.
+- To add several abstractions up admissibly, combine them with [`cost-partition`](https://github.com/sunsided/cost-partition); for delete-relaxation, landmark or red-black heuristics, use [`planning-heuristics`](https://github.com/sunsided/planning-heuristics) instead, and for exhaustive search over decision diagrams, [`symbolic-search`](https://github.com/sunsided/symbolic-search).
+
+Without a size limit, exact bisimulation can still grow exponentially on large tasks. Set `max_states` (Fast Downward uses 50000) to bound every product; the heuristic stays admissible but is no longer perfect. The implementation favors readability over speed, so for large benchmarks Fast Downward remains much faster.
+
+## Installation
+
+```toml
+[dependencies]
+merge-and-shrink = "0.3"
+```
 
 ## How it works
 
@@ -38,14 +52,6 @@ flowchart LR
 6. **Evaluate.** After the last merge, the goal distances of the single remaining factor are the heuristic. A merge tree of lookup tables maps each concrete state to its abstract state, one table per merge, so evaluating a state is cheap.
 
 On plain SAS+ tasks, exact bisimulation without a size limit makes the heuristic perfect: it equals the optimal cost on every state without pruning, and on every reachable state with pruning (`MergeAndShrink::new` prunes by default; pruned states evaluate to `None`). Conditional effects and derived variables (axioms) are over-approximated by the atomic factors, so there the heuristic stays admissible but can be lower.
-
-## Who it is for
-
-- People building optimal planners or search algorithms in Rust who need a strong admissible heuristic.
-- Researchers and students experimenting with abstraction heuristics, merge or shrink strategies, or cost partitioning, who want a small, readable, tested implementation.
-- Anyone who needs a reference h* on small tasks: with exact bisimulation and `prune: false`, the result is perfect on every state, so it can check other heuristics.
-
-Without a size limit, exact bisimulation can still grow exponentially on large tasks. Set `max_states` (Fast Downward uses 50000) to bound every product; the heuristic stays admissible but is no longer perfect. The implementation favors readability over speed, so for large benchmarks Fast Downward remains much faster.
 
 ## Usage
 
