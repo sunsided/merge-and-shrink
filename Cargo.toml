@@ -6,6 +6,7 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 rust-version = "1.85"
 repository = "https://github.com/sunsided/merge-and-shrink"
+homepage = "https://sunsided.github.io/planning-and-search/crates/merge-and-shrink/"
 readme = "README.md"
 keywords = ["planning", "merge-and-shrink", "heuristic", "abstraction", "bisimulation"]
 categories = ["algorithms", "artificial-intelligence", "science", "no-std"]
